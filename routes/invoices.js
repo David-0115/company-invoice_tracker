@@ -42,7 +42,7 @@ router.post('/', async (req, res, next) => {
         } else {
             const { comp_code, amt } = req.body;
             const now = new Date();
-            const result = await db.query(`INSERT INTO invoices (comp_code, amt, add_date) VALUES ($1, $2, $3) RETURNING *`, [comp_code, amt, now]);
+            const result = await db.query(`INSERT INTO invoices (comp_code, amt, add_date) VALUES ($1, $2, $3) RETURNING  *`, [comp_code, amt, now]);
             if (result.rows.length === 0) {
                 throw new ExpressError(`Error saving invoice with ${comp_code}, ${amt} to database, please try again`, 500);
             } else {
@@ -92,7 +92,7 @@ router.delete('/:id', async (req, res, next) => {
     }
 });
 
-router.get('/companies/:code', async (req, res, next) => {
+router.get('/company/:code', async (req, res, next) => {
     try {
         const { code } = req.params;
         const companyResult = await db.query(`SELECT * FROM companies WHERE code = $1`, [code])
