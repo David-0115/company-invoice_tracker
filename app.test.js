@@ -221,14 +221,41 @@ describe('POST /invoices', () => {
 });
 
 describe('PUT /invoices', () => {
-    test('PUT /invoices/id updates invoice amount', async () => {
+    test('PUT /invoices/id updates invoice amount adds to an amount', async () => {
         const result = await db.query(`SELECT * FROM invoices WHERE comp_code = 'ibm'`);
         const inv = result.rows[0];
-        const resp = await request(app).put(`/invoices/${inv.id}`).send({ "amt": 15000 });
-        inv.amt = 15000;
+        const resp = await request(app).put(`/invoices/${inv.id}`).send({ "amt": 200, "paid": false });
+
         inv.add_date = inv.add_date.toISOString();
+        inv.paid_date = null;
+        inv.paid = false;
         expect(resp.statusCode).toBe(200);
-        expect(resp.body).toEqual({ invoice: inv });
+        expect(resp.body).toEqual({
+            invoice: {
+                "id": inv.id,
+                "comp_code": inv.comp_code,
+                "amt": inv.amt + 200,
+                "add_date": expect.any(String),
+                "paid_date": null
+            }
+        });
+    });
+
+    test('PUT /invoices/id updates invoice amount, pays an amount', async () => {
+        const result = await db.query(`SELECT * FROM invoices WHERE comp_code = 'ibm'`);
+        const inv = result.rows[0];
+        const resp = await request(app).put(`/invoices/${inv.id}`).send({ "amt": 200, "paid": true });
+
+        expect(resp.statusCode).toBe(200);
+        expect(resp.body).toEqual({
+            invoice: {
+                "id": inv.id,
+                "comp_code": inv.comp_code,
+                "amt": inv.amt - 200,
+                "add_date": expect.any(String),
+                "paid_date": expect.any(String)
+            }
+        });
     });
 
     test('PUT /invoices/invalid_id throws error', async () => {
@@ -264,33 +291,30 @@ describe('DELETE /invoices/id', () => {
 });
 
 describe('GET /invoices/company/code', () => {
-    // test('GET /invoices/company/code returns list of invoices for company', async () => {
-    //     const result = await db.query(`SELECT * FROM invoices WHERE comp_code = 'ibm'`);
-    //     const inv = result.rows[0];
-    //     const resp = await request(app).get(`/invoices/${inv.id}`);
-    //     console.log('*******')
-    //     console.log(inv.id);
-    //     console.log('*******')
-    //     const expected = {
-    //         "company": {
-    //             "code": "ibm",
-    //             "name": "IBM",
-    //             "description": "Big blue.",
-    //             "invoices": [
-    //                 {
-    //                     "id": 4,
-    //                     "comp_code": "ibm",
-    //                     "amt": 400,
-    //                     "paid": false,
-    //                     "add_date": "2024-03-08T05:00:00.000Z",
-    //                     "paid_date": null
-    //                 }
-    //             ]
-    //         }
-    //     };
-    //     expect(resp.statusCode).toBe(200);
-    //     expect(resp.body).toEqual(expected);
-    // });
+    test('GET /invoices/company/code returns list of invoices for company', async () => {
+        const result = await db.query(`SELECT * FROM invoices WHERE comp_code = 'ibm'`);
+        const inv = result.rows[0];
+        const resp = await request(app).get(`/invoices/company/${inv.comp_code}`);
+        const expected = {
+            "company": {
+                "code": "ibm",
+                "name": "IBM",
+                "description": "Big blue.",
+                "invoices": [
+                    {
+                        "id": expect.any(Number),
+                        "comp_code": "ibm",
+                        "amt": 400,
+                        "paid": false,
+                        "add_date": expect.any(String),
+                        "paid_date": null
+                    }
+                ]
+            }
+        };
+        expect(resp.statusCode).toBe(200);
+        expect(resp.body).toEqual(expected);
+    });
 
     test('GET /invoices/company/invalid_id throws error', async () => {
         const resp = await request(app).delete(`/invoices/0`);
