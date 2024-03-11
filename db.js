@@ -1,9 +1,7 @@
 /** Database setup for BizTime. */
 const { Client } = require('pg');
 require('dotenv').config();
-const user = process.env.DB_USER;
-const pw = process.env.DB_PASS;
-const host = process.env.DB_HOST;
+
 
 let DB_NAME;
 
