@@ -11,7 +11,6 @@ if (process.env.NODE_ENV === 'test') {
     DB_NAME = `biztime`;
 }
 
-console.log(DB_NAME);
 
 const db = new Client({
     user: process.env.DB_USER,
